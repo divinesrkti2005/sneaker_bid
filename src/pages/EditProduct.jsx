@@ -1,12 +1,14 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import MainLayout from '../layouts/MainLayout'
 import productService from '../services/productService'
 
-function AddProduct() {
+function EditProduct() {
+  const { id } = useParams()
   const navigate = useNavigate()
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
+  const [fetching, setFetching] = useState(true)
   const [error, setError] = useState('')
 
   const [formData, setFormData] = useState({
@@ -17,7 +19,7 @@ function AddProduct() {
     images: [],
     deliveryOptions: ['Online payment'],
     shippingTime: '',
-    auctionDuration: '7', // Days
+    auctionDuration: '7',
   })
 
   const steps = [
@@ -27,11 +29,42 @@ function AddProduct() {
     { id: 4, name: 'Delivery', icon: '📦' },
   ]
 
+  useEffect(() => {
+    fetchProduct()
+  }, [id])
+
+  const fetchProduct = async () => {
+    try {
+      const data = await productService.getProductById(id)
+      setFormData({
+        name: data.name || '',
+        description: data.description || '',
+        price: data.price || '',
+        categories: data.categories || [],
+        images: data.images || [],
+        deliveryOptions: data.deliveryOptions || ['Online payment'],
+        shippingTime: data.shippingTime ? new Date(data.shippingTime).toISOString().split('T')[0] : '',
+        auctionDuration: data.endTime ? calculateDuration(data.endTime) : '7',
+      })
+    } catch (error) {
+      console.error('Error fetching product:', error)
+      alert('Failed to load product')
+      navigate('/sell/dashboard')
+    } finally {
+      setFetching(false)
+    }
+  }
+
+  const calculateDuration = (endTime) => {
+    const now = new Date()
+    const end = new Date(endTime)
+    const diff = Math.ceil((end - now) / (1000 * 60 * 60 * 24))
+    return diff > 0 ? diff.toString() : '7'
+  }
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
     if (type === 'checkbox') {
-      // Handle array updates for checkboxes if needed, or simple boolean
-      // For delivery options:
       if (name === 'deliveryOptions') {
         const updatedOptions = checked
           ? [...formData.deliveryOptions, value]
@@ -43,7 +76,6 @@ function AddProduct() {
     }
   }
 
-  // Custom handler for simple non-event updates
   const updateFormData = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
@@ -64,32 +96,35 @@ function AddProduct() {
       const endTime = new Date()
       endTime.setDate(endTime.getDate() + parseInt(formData.auctionDuration || 7))
       
-      // Ensure at least one image
-      const images = formData.images.length > 0 
-        ? formData.images 
-        : ['https://images.unsplash.com/photo-1552346154-21d32810aba3?auto=format&fit=crop&w=400&h=400']
-      
       const productData = {
         ...formData,
-        images,
         endTime: endTime.toISOString(),
         price: parseFloat(formData.price)
       }
       
-      await productService.createProduct(productData)
+      await productService.updateProduct(id, productData)
       navigate('/sell/dashboard')
     } catch (err) {
-      setError(err.message || 'Failed to create product')
+      setError(err.message || 'Failed to update product')
       setLoading(false)
     }
+  }
+
+  if (fetching) {
+    return (
+      <MainLayout>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center">Loading product...</div>
+        </div>
+      </MainLayout>
+    )
   }
 
   return (
     <MainLayout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Breadcrumbs */}
         <div className="mb-6">
-          <span className="text-gray-600">Sell &gt; Add Product</span>
+          <span className="text-gray-600">Sell &gt; Edit Product</span>
         </div>
 
         {/* Progress Indicator */}
@@ -190,6 +225,7 @@ function AddProduct() {
                 <select
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4"
                   onChange={(e) => updateFormData('categories', [e.target.value])}
+                  value={formData.categories[0] || ''}
                 >
                   <option value="">Select Category</option>
                   <option value="Sneakers">Sneakers</option>
@@ -212,7 +248,7 @@ function AddProduct() {
           {step === 3 && (
             <div>
               <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                Add product photos
+                Product Photos
               </h2>
               <div className="space-y-4 mb-6">
                 <div>
@@ -230,14 +266,13 @@ function AddProduct() {
                       try {
                         const uploadedUrls = await productService.uploadImages(files)
                         updateFormData('images', [...formData.images, ...uploadedUrls])
-                        e.target.value = '' // Reset input
+                        e.target.value = ''
                       } catch (error) {
                         alert(error.message || 'Failed to upload images')
                       }
                     }}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                   />
-                  <p className="text-sm text-gray-500 mt-1">Select image files to upload</p>
                 </div>
                 {formData.images.length > 0 && (
                   <div className="grid grid-cols-3 gap-4">
@@ -247,9 +282,6 @@ function AddProduct() {
                           src={img.startsWith('http') ? img : `http://localhost:5000${img}`}
                           alt={`Product ${index + 1}`}
                           className="w-full h-32 object-cover rounded-lg"
-                          onError={(e) => {
-                            e.target.src = 'https://via.placeholder.com/300x300?text=Invalid+Image'
-                          }}
                         />
                         <button
                           type="button"
@@ -262,12 +294,6 @@ function AddProduct() {
                         </button>
                       </div>
                     ))}
-                  </div>
-                )}
-                {formData.images.length === 0 && (
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                    <div className="text-4xl mb-2">📷</div>
-                    <p className="text-gray-500">No images added yet. Upload images above.</p>
                   </div>
                 )}
               </div>
@@ -320,18 +346,6 @@ function AddProduct() {
                   <option value="30">30 Days</option>
                 </select>
               </div>
-              <div>
-                <label className="block text-gray-700 font-medium mb-2">
-                  Shipping time (Optional)
-                </label>
-                <input
-                  type="date"
-                  name="shippingTime"
-                  value={formData.shippingTime}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
             </div>
           )}
 
@@ -349,7 +363,7 @@ function AddProduct() {
               disabled={loading}
               className="bg-primary text-white px-8 py-3 rounded-lg font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50"
             >
-              {loading ? 'Saving...' : step === 4 ? 'Finish' : 'Next'}
+              {loading ? 'Saving...' : step === 4 ? 'Update Product' : 'Next'}
             </button>
           </div>
         </div>
@@ -358,6 +372,4 @@ function AddProduct() {
   )
 }
 
-export default AddProduct
-
-
+export default EditProduct

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 function ProductCard({ product, index }) {
   return (
     <Link
-      to={`/product/${product.id || index}`}
+      to={`/product/${product._id || product.id || index}`}
       className="bg-white rounded-xl shadow-md overflow-hidden hover-lift group cursor-pointer"
       style={{ animationDelay: `${index * 0.1}s` }}
     >
@@ -14,7 +14,15 @@ function ProductCard({ product, index }) {
           </span>
         </div>
         <div className="absolute inset-0 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-          <span className="text-gray-400 text-4xl">👟</span>
+          {product.images && product.images.length > 0 ? (
+            <img
+              src={product.images[0]}
+              alt={product.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <span className="text-gray-400 text-4xl">👟</span>
+          )}
         </div>
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity">
           <p className="text-white text-sm font-semibold">View Details →</p>
@@ -33,15 +41,28 @@ function ProductCard({ product, index }) {
           </span>
         </div>
         <div className="flex items-center justify-between text-sm">
-          <p className="text-gray-500">({product.seller || 'Seller name'})</p>
-          <div className="flex items-center gap-1 text-primary">
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-            </svg>
-            <span className="text-xs font-medium">
-              {product.timeLeft || '4d 20h'}
-            </span>
-          </div>
+          <p className="text-gray-500">
+            {product.seller?.name ? `(${product.seller.name})` : '(Seller)'}
+          </p>
+          {product.endTime && (
+            <div className="flex items-center gap-1 text-primary">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+              </svg>
+              <span className="text-xs font-medium">
+                {(() => {
+                  const now = new Date()
+                  const end = new Date(product.endTime)
+                  const diff = end - now
+                  if (diff <= 0) return 'Ended'
+                  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+                  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+                  if (days > 0) return `${days}d ${hours}h`
+                  return `${hours}h`
+                })()}
+              </span>
+            </div>
+          )}
         </div>
         <div className="mt-3 pt-3 border-t border-gray-100">
           <button className="w-full bg-primary text-white py-2 rounded-lg font-semibold hover:bg-primary-dark transition-colors hover:scale-105 transform">

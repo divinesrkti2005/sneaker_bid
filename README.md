@@ -14,24 +14,66 @@ A modern web application for bidding and selling sneakers, built with React, Vit
 
 ## 🛠️ Tech Stack
 
+### Frontend
 - **React 18** - UI library
 - **Vite** - Build tool and dev server
 - **Tailwind CSS** - Utility-first CSS framework
 - **React Router** - Client-side routing
 
+### Backend
+- **Node.js** - Runtime environment
+- **Express.js** - Web framework
+- **MongoDB** - Database
+- **Mongoose** - ODM for MongoDB
+- **JWT** - Authentication
+- **bcryptjs** - Password hashing
+
 ## 📦 Installation
 
-1. Install dependencies:
+### Quick Start
+
+1. **Install Frontend Dependencies:**
 ```bash
 npm install
 ```
 
-2. Start the development server:
+2. **Install Backend Dependencies:**
+```bash
+cd server
+npm install
+cd ..
+```
+
+3. **Set Up Environment Variables:**
+
+Create `server/.env` file:
+```env
+MONGO_URI=mongodb://localhost:27017/sneaker_bid
+JWT_SECRET=your_jwt_secret_key_here
+PORT=5000
+```
+
+For MongoDB Atlas, use:
+```env
+MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/sneaker_bid
+```
+
+4. **Start Backend Server** (Terminal 1):
+```bash
+cd server
+npm start
+```
+
+5. **Start Frontend Server** (Terminal 2):
 ```bash
 npm run dev
 ```
 
-3. Open your browser and navigate to `http://localhost:5173`
+6. **Access the Application:**
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:5000/api
+
+> 📖 For detailed setup instructions, see [SETUP.md](./SETUP.md)
 
 ## 📁 Project Structure
 
@@ -81,18 +123,26 @@ src/
 - `/auctions` - Ongoing auctions listing
 - `/ongoing-auctions` - Ongoing auctions (alias)
 
-## 🚧 Next Steps
+## ✅ Current Features
+
+- ✅ **Backend API** - Full REST API with Express.js
+- ✅ **Authentication** - JWT-based user authentication
+- ✅ **Database** - MongoDB with Mongoose ODM
+- ✅ **Product Management** - Create, list, and manage products
+- ✅ **User Profiles** - User registration, login, and profile management
+- ✅ **Protected Routes** - Authentication middleware for secure endpoints
+
+## 🚧 Future Enhancements
 
 To enhance the platform, consider adding:
 
-1. **Backend Integration** - Connect to an API for data persistence
-2. **Authentication** - Implement real user authentication
-3. **Image Upload** - Add actual image upload functionality
-4. **Bidding System** - Real-time bidding functionality
-5. **Payment Integration** - Payment gateway integration
-6. **Search & Filters** - Advanced search and filtering
-7. **User Profiles** - User profile pages
-8. **Product Details** - Individual product detail pages
+1. **Image Upload** - Actual image upload functionality (currently using placeholder URLs)
+2. **Bidding System** - Real-time bidding functionality with WebSockets
+3. **Payment Integration** - Payment gateway integration (Stripe, PayPal, etc.)
+4. **Search & Filters** - Advanced search and filtering capabilities
+5. **Product Details** - Individual product detail pages with bid history
+6. **Email Notifications** - Email alerts for bids and auction endings
+7. **Admin Dashboard** - Admin panel for managing users and products
 
 ## 📝 Build for Production
 

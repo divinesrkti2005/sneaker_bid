@@ -1,12 +1,63 @@
+import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import MainLayout from '../layouts/MainLayout'
+import productService from '../services/productService'
+import ProductCard from '../components/ProductCard'
 
 function OngoingAuctions() {
+  const [products, setProducts] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [filters, setFilters] = useState({
+    search: '',
+    category: '',
+    minPrice: '',
+    maxPrice: '',
+    sortBy: 'newest'
+  })
+
+  useEffect(() => {
+    fetchProducts()
+  }, [filters])
+
+  const fetchProducts = async () => {
+    setLoading(true)
+    try {
+      const params = new URLSearchParams()
+      if (filters.search) params.append('search', filters.search)
+      if (filters.category) params.append('category', filters.category)
+      if (filters.minPrice) params.append('minPrice', filters.minPrice)
+      if (filters.maxPrice) params.append('maxPrice', filters.maxPrice)
+      if (filters.sortBy) params.append('sortBy', filters.sortBy)
+
+      const queryString = params.toString()
+      const url = queryString 
+        ? `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/products?${queryString}`
+        : `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/products`
+      
+      const response = await fetch(url)
+      const data = await response.json()
+      setProducts(data)
+    } catch (error) {
+      console.error('Error fetching products:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleFilterChange = (field, value) => {
+    setFilters(prev => ({ ...prev, [field]: value }))
+  }
+
+  const categories = ['Running', 'Basketball', 'Lifestyle', 'Limited Edition']
+
   return (
     <MainLayout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumbs */}
         <div className="mb-6">
-          <span className="text-gray-600">Home &gt; Ongoing Auctions</span>
+          <Link to="/" className="text-gray-600 hover:text-primary">Home</Link>
+          <span className="text-gray-600 mx-2">/</span>
+          <span className="text-gray-900">Ongoing Auctions</span>
         </div>
 
         <div className="grid md:grid-cols-4 gap-6">
@@ -30,39 +81,71 @@ function OngoingAuctions() {
                 </svg>
               </div>
 
+              {/* Search */}
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Search
+                </label>
+                <input
+                  type="text"
+                  value={filters.search}
+                  onChange={(e) => handleFilterChange('search', e.target.value)}
+                  placeholder="Search products..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+
+              {/* Category */}
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Category
+                </label>
+                <select
+                  value={filters.category}
+                  onChange={(e) => handleFilterChange('category', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">All Categories</option>
+                  {categories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Price Range */}
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="font-semibold text-gray-900">Price</h4>
-                  <svg
-                    className="w-4 h-4 text-gray-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 15l7-7 7 7"
-                    />
-                  </svg>
                 </div>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Rs.50000</span>
-                    <span className="text-gray-600">Rs.200000</span>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Min Price</label>
+                    <input
+                      type="number"
+                      value={filters.minPrice}
+                      onChange={(e) => handleFilterChange('minPrice', e.target.value)}
+                      placeholder="50000"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                    />
                   </div>
-                  <input
-                    type="range"
-                    min="50000"
-                    max="200000"
-                    className="w-full"
-                  />
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Max Price</label>
+                    <input
+                      type="number"
+                      value={filters.maxPrice}
+                      onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
+                      placeholder="200000"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <button className="w-full bg-primary text-white py-2 rounded-lg font-semibold hover:bg-primary-dark transition-colors">
-                Apply Filter
+              <button
+                onClick={() => setFilters({ search: '', category: '', minPrice: '', maxPrice: '', sortBy: 'newest' })}
+                className="w-full bg-gray-100 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-200 transition-colors mb-2"
+              >
+                Clear Filters
               </button>
             </div>
           </div>
@@ -71,64 +154,32 @@ function OngoingAuctions() {
           <div className="md:col-span-3">
             <div className="flex items-center justify-between mb-6">
               <h1 className="text-2xl font-bold text-gray-900">
-                Ongoing Auctions
+                Ongoing Auctions ({products.length})
               </h1>
-              <select className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
-                <option>Sort by: Most Popular</option>
-                <option>Sort by: Price Low to High</option>
-                <option>Sort by: Price High to Low</option>
-                <option>Sort by: Ending Soon</option>
+              <select
+                value={filters.sortBy}
+                onChange={(e) => handleFilterChange('sortBy', e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="newest">Sort by: Newest</option>
+                <option value="price-low">Sort by: Price Low to High</option>
+                <option value="price-high">Sort by: Price High to Low</option>
               </select>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((item) => (
-                <div
-                  key={item}
-                  className="bg-white rounded-xl shadow-md overflow-hidden hover-lift group cursor-pointer animate-fadeIn"
-                  style={{ animationDelay: `${item * 0.05}s` }}
-                >
-                  <div className="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
-                    <div className="absolute top-2 right-2 z-10">
-                      <span className="bg-primary text-white text-xs font-bold px-2 py-1 rounded-full">
-                        HOT
-                      </span>
-                    </div>
-                    <div className="absolute inset-0 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                      <span className="text-gray-400 text-4xl">👟</span>
-                    </div>
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <p className="text-white text-sm font-semibold">View Details →</p>
-                    </div>
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-primary transition-colors">
-                      Product name
-                    </h3>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-primary font-bold text-lg">
-                        Rs.120
-                      </span>
-                      <span className="bg-primary/10 text-primary text-xs font-semibold px-2 py-1 rounded-full">
-                        3 bids
-                      </span>
-                    </div>
-                    <p className="text-gray-500 text-sm mb-2">
-                      (Seller name) 45
-                    </p>
-                    <div className="flex items-center gap-1 text-primary text-sm">
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                      </svg>
-                      <span className="font-medium">Time left 4d 20h</span>
-                    </div>
-                    <button className="w-full mt-3 bg-primary text-white py-2 rounded-lg font-semibold hover:bg-primary-dark transition-colors hover:scale-105 transform">
-                      Place Bid
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+            {loading ? (
+              <div className="text-center py-12">Loading products...</div>
+            ) : products.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                No products found. Try adjusting your filters.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                {products.map((product, index) => (
+                  <ProductCard key={product._id} product={product} index={index} />
+                ))}
+              </div>
+            )}
 
             {/* Pagination */}
             <div className="flex items-center justify-center space-x-2">
